@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        margin: 20px auto;
+        width: 1000px;
+        height: 1000px;
+        position: relative;
+      }
+      main {
+        padding: 10px;
+        overflow-y: auto;
+        height: calc(80% - 100px);
+        border: 1px solid rgba(0, 0, 0, 0.3);
+      }
+      h1 {
+        text-align: center;
+        width: 100%;
+        height: 80px;
+        line-height: 80px;
+      }
+      .revice {
+        text-align: left;
+        display: flex;
+        margin-bottom: 20px;
+      }
+      .send {
+        text-align: right;
+        display: flex;
+        flex-direction: row-reverse;
+        margin-bottom: 20px;
+      }
+      .avater {
+        border: 1px solid rgba(0, 0, 0, 0.3);
+        height: 50px;
+        min-width: 50px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 5px;
+      }
+      .content {
+        word-wrap: break-word;
+        word-break: break-all;
+        margin: 0 10px;
+        padding: 5px;
+        border-radius: 5px;
+      }
+      .revice .content {
+        background-color: #409eff;
+        color: white;
+      }
+      .send .content {
+        background-color: #67c23a;
+        color: white;
+      }
+      footer {
+        height: 220px;
+      }
+      textarea {
+        padding: 10px;
+        display: block;
+        resize: none;
+        height: 120px;
+        width: calc(100% - 20px);
+        outline-color: rgba(0, 0, 0, 0.3);
+      }
+      .btnContent {
+        text-align: right;
+      }
+      button {
+        background-color: white;
+        border: none;
+        width: 60px;
+        height: 30px;
+        text-align: center;
+        line-height: 30px;
+        border: 1px solid;
+        border-radius: 5px;
+        margin-top: 20px;
+        cursor: pointer;
+      }
+      .userList {
+        position: absolute;
+        border: 1px solid rgb(196, 196, 196);
+        top: 80px;
+        width: 300px;
+        height: 300px;
+        padding: 10px;
+        right: -340px;
+        border-radius: 5px;
+        text-align: center;
+      }
+      .userList ul {
+        overflow: auto;
+        height: calc(100% - 30px);
+        margin-top: 10px;
+      }
+      .userList ul li {
+        text-align: left;
+      }
+    </style>
+    <title>Document</title>
+  </head>
+
+  <body>
+    <h1>聊天室</h1>
+    <main></main>
+    <footer>
+      <textarea></textarea>
+      <div class="btnContent">
+        <button class="submit">发送</button>
+        <button class="cancel">退出</button>
+      </div>
+    </footer>
+    <div class="userList">
+      <div class="useCount">有n人个在线</div>
+      <ul class="listContent">
+        <li>11</li>
+      </ul>
+    </div>
+  </body>
+  <script type="importmap">
+    {
+      "imports": {
+        "socket.io-client": "https://cdn.socket.io/4.4.1/socket.io.esm.min.js"
+      }
+    }
+  </script>
+  <script type="module">
+    import { io } from 'socket.io-client'
+    const socket = io()
+    const listContent = document.querySelector('.listContent')
+    const userCount = document.querySelector('.useCount')
+    const cancelBtn = document.querySelector('.cancel')
+    const submitBtn = document.querySelector('.submit')
+    const context = document.querySelector('textarea')
+    const mainer = document.querySelector('main')
+    const name = prompt('请输入你的用户名')
+    if (name) {
+      //登录
+      socket.emit('login', name)
+      //接收信息
+      socket.on('message', (data) => {
+        const { type } = data
+        if (type === 'message') {
+          const {
+            data: { content, name },
+          } = data
+          const el = document.createElement('div')
+          el.classList.add('revice')
+          el.innerHTML = `<div class="avater">${name}</div>
+        <div class="content">${content}</div>`
+          mainer.appendChild(el)
+          mainer.scrollTop = mainer.scrollHeight
+        } else {
+          const {
+            data: { count, list },
+          } = data
+          userCount.innerHTML = `有${count}人个在线`
+          listContent.innerHTML = Object.keys(list)
+            .map((item) => {
+              return `<li>${item}<li>`
+            })
+            .join('')
+        }
+      })
+    }
+    function addUserList(data) {}
+    cancelBtn.addEventListener('click', () => {
+      socket.emit('loginOut', name)
+    })
+    submitBtn.addEventListener('click', () => {
+      socket.emit('message', { name, content: context.value })
+
+      const el = document.createElement('div')
+      console.dir(el)
+      el.classList.add('send')
+      el.innerHTML = `<div class="avater">${name}</div>
+        <div class="content">${context.value}</div>`
+      mainer.appendChild(el)
+      context.value = ''
+      mainer.scrollTop = mainer.scrollHeight
+    })
+  </script>
+</html>
